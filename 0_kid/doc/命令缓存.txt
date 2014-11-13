@@ -1,0 +1,27 @@
+
+make distclean ARCH=arm
+cp no_file .config
+make menuconfig ARCH=arm
+make -j48 uImage modules ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf-
+make modules ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf-
+
+sudo make INSTALL_MOD_PATH=/home/wupf/work/nfsroot/awlinux-wupf/kernel/board ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- modules_install
+
+sudo mount 172.16.7.3:/home/wupf/work/nfsroot /mnt && cd /mnt/
+
+
+    sudo modprobe fbtft_device name=itdb28 \
+        gpios=reset:89,dc:68,wr:67,cs:109,\
+        db00:9,db01:10,db02:11,db03:12,db04:13,db05:14,db06:15,db07:16 \
+        rotate=90 fps=50
+
+FRAMEBUFFER=/dev/fb2 startx
+
+sudo modprobe -r fbtft_device
+sudo modprobe -r fb_ili9325
+
+
+sudo modprobe fbtft_device name=flexpfb gpios=reset:89,dc:68,wr:67,cs:109,db00:9,db01:10,db02:11,db03:12,db04:13,db05:14,db06:15,db07:16 rotate=90 fps=50
+sudo modprobe flexfb chip=ili9325 width=320 height=240 setaddrwin=1
+sudo modprobe -r fbtft_device
+sudo modprobe -r flexfb

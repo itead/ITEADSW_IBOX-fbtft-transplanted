@@ -1,0 +1,86 @@
+﻿目标：
+    在Raspberry Pi v2上使用Raspberry PI 2.8 TFT Add-on v1.1 显示桌面（支持触摸屏操作）
+
+准备工作：
+    烧写2014-01-07-wheezy-raspbian.img到SD卡，并启动Raspberry Pi v2
+    保证网络连接正常
+    将Raspberry PI 2.8 TFT Add-on v1.1与Raspberry版正确连接
+
+0. 安装rpi-update以及fbtft驱动(以模块方式安装)
+0.1 注释掉/etc/modprobe.d/raspi-blacklist.conf中关于spi的屏蔽
+0.2 调整时间为当前时间：
+    date -s "2014-07-16 16:27:00"
+0.3 安装必要的软件
+    sudo apt-get update
+    sudo apt-get install xinput evtest tslib libts-bin
+    
+0.4 下载fbtft驱动模块
+    可能需要运行三次下面的命令：
+    sudo REPO_URI=https://github.com/notro/rpi-firmware rpi-update 
+    
+    最终会得到
+         *** Running pre-install script
+         Work around rpi-update issue #106
+         *** Updating firmware
+         *** Updating kernel modules
+         *** depmod 3.12.21+
+         *** Updating VideoCore libraries
+         *** Using HardFP libraries
+         *** Updating SDK
+         *** Running ldconfig
+         *** Storing current firmware revision
+         *** Running post-install script
+             /lib/firmware
+         *** Deleting downloaded files
+         *** Syncing changes to disk
+         *** If no errors appeared, your firmware was successfully updated to b77683205688d3f6ae2b32a3c7f4e63de1c06a5d
+         *** A reboot is needed to activate the new firmware
+    此时，重新启动即可。
+        sudo reboot
+
+1. 配置/usr/share/X11/xorg.conf.d/99-fbdev.conf:
+[中括号内为文件内容，不包含中括号和本行文本
+        Section "Device"  
+          Identifier "itdb28"
+          Driver "fbdev"
+          Option "fbdev" "/dev/fb1"
+        EndSection
+]
+
+
+2. 加载tft显示驱动
+sudo modprobe fbtft_device name=itdb28 gpios=reset:14,dc:2,wr:3,cs:8,db00:17,db01:18,db02:27,db03:22,db04:23,db05:24,db06:25,db07:4 rotate=90 fps=50
+
+3. 启动x
+startx &
+
+4. 加载触摸屏驱动
+sudo modprobe ads7846_device cs=1 speed=2000000 gpio_pendown=15 x_max=3850 x_min=230 x_plate_ohms=100 swap_xy=1 verbose=2 pressure_max=255 y_min=190 y_max=3850
+
+5 调整触摸屏的X与Y方向
+DISPLAY=:0 xinput --set-prop 'ADS7846 Touchscreen' 'Evdev Axis Inversion' 1 0
+
+
+6. 测试
+6.1 查看与触摸屏对应的event事件编号
+     pi@raspberrypi ~ $ cat /proc/bus/input/devices
+        I: Bus=0000 Vendor=0000 Product=0000 Version=0000
+        N: Name="ADS7846 Touchscreen"
+        P: Phys=spi0.1/input0
+        S: Sysfs=/devices/platform/bcm2708_spi.0/spi_master/spi0/spi0.1/input/input0
+        U: Uniq=
+        H: Handlers=mouse0 event0 
+        B: PROP=0
+        B: EV=b
+        B: KEY=400 0 0 0 0 0 0 0 0 0 0
+        B: ABS=1000003
+
+    pi@raspberrypi ~ $ 
+
+    应该是event0
+    
+6.2 校准触摸屏
+    sudo TSLIB_FBDEVICE=/dev/fb1 TSLIB_TSDEVICE=/dev/input/event0 ts_calibrate
+        
+6.3 测试触摸屏
+    sudo TSLIB_FBDEVICE=/dev/fb1 TSLIB_TSDEVICE=/dev/input/event0 ts_test

@@ -1,0 +1,111 @@
+﻿ts移植分析
+
+
+1. 内核GPIO接口与中断框架
+
+[Okay]1.1 分析内核文档 Documentation/gpio.txt  
+    这个文档在学习GPIO内核框架时，是最宝贵的第一手资料。花费2天时间来研究，是不错的。
+    
+[Okay]1.2 学习系统调用poll和select 
+    看视频学习poll和select，阻塞与非阻塞的问题，在用户空间调用select或者poll，对应内核空间驱动程序的poll方法。
+    主要起到文件读写监控的作用。
+    
+[Okay]1.3 学习用户空间和驱动之间的异步通信机制
+    通过信号机制，可以使用驱动程序来通知应用程序某一事件的发生，例如中断等。
+    
+[Okay]1.4 输入子系统框架(触摸屏驱动分析)
+    
+    
+1.5 内核irq系统框架
+    最新消息，A20 32个外部GPIO中断是已经注册到内核中了，PIO中断号就是，哈哈！
+     
+    
+1.6 尝试在用户空间使用gpio1/2的中断触发方式
+    
+    
+1.7 分析gpiolib框架
+        Gpio.h (arch\arm\include\asm)
+        Gpio.h (include\asm-generic)
+        Gpio.h (include\linux)
+        Gpiolib.c (drivers\gpio)
+        
+1.8 分析linun-sunxi已有的gpio驱动代码
+        Gpio.h (arch\arm\plat-sunxi\include\plat)
+        Gpio.h (arch\arm\mach-sun7i\include\mach)
+        Gpio-sunxi.c (drivers\gpio)
+        Gpio-sunxi.h (drivers\gpio)
+
+
+
+4. 如何使用并测试ts驱动
+
+
+
+5. 分析代码并移植
+
+
+
+6. 测试
+
+
+
+
+make distclean ARCH=arm
+cp no_file .config
+make menuconfig ARCH=arm
+make -j48 uImage modules ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf-
+make modules ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf-
+
+sudo make INSTALL_MOD_PATH=/home/wupf/work/nfsroot/awlinux-wupf/kernel/board ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- modules_install
+
+sudo mount 172.16.7.3:/home/wupf/work/nfsroot /mnt && cd /mnt/
+
+
+sudo modprobe fbtft_device name=itdb28 gpios=reset:89,dc:68,wr:67,cs:109,db00:9,db01:10,db02:11,db03:12,db04:13,db05:14,db06:15,db07:16 rotate=90 fps=50
+sudo modprobe fbtft_device name=itdb28 gpios=reset:15,dc:16,wr:17,cs:18,db00:19,db01:20,db02:21,db03:22,db04:23,db05:24,db06:25,db07:26 rotate=90 fps=50
+
+FRAMEBUFFER=/dev/fb2 startx &
+
+sudo modprobe -r fbtft_device
+sudo modprobe -r fb_ili9325
+
+4. 加载触摸屏驱动
+sudo modprobe ads7846_device cs=1 speed=2000000 gpio_pendown=15 x_max=3850 x_min=230 x_plate_ohms=100 swap_xy=1 verbose=2 pressure_max=255 y_min=190 y_max=3850
+sudo modprobe ads7846_device cs=0 speed=2000000 gpio_pendown=3 x_max=3850 x_min=230 x_plate_ohms=100 swap_xy=1 verbose=2 pressure_max=255 y_min=190 y_max=3850
+
+modprobe -r ads7846_device
+modprobe -r ads7846
+
+5 调整触摸屏的X与Y方向
+DISPLAY=:0 xinput --set-prop 'ADS7846 Touchscreen' 'Evdev Axis Inversion' 1 0
+
+
+[  195.100827] ads7846_device: ads7846_device_init()
+[  195.112938] ads7846_device: SPI devices registered:
+[  195.119647] ads7846_device:
+[  195.125059] ads7846_device: Settings:
+[  195.131796] ads7846_device:   model = 7846
+[  195.139282] ads7846_device:   gpio_pendown = 3
+[  195.146741] ads7846_device:   swap_xy = 1
+[  195.153739] ads7846_device:   x_min = 230
+[  195.160816] ads7846_device:   x_max = 3850
+[  195.167868] ads7846_device:   y_min = 190
+[  195.174941] ads7846_device:   y_max = 3850
+[  195.182625] ads7846_device:   x_plate_ohms = 100
+[  195.190650] ads7846_device:   pressure_min = 0
+[  195.198655] ads7846_device:   pressure_max = 255
+[  195.206684] ads7846_device:   keep_vref_on = 1
+[  195.214887] ads7846_device:   vref_delay_usecs = 0
+[  195.222650] ads7846_device:   vref_mv = 0
+[  195.230594] ads7846_device:   settle_delay_usecs = 0
+[  195.240158] ads7846_device:   penirq_recheck_delay_usecs = 0
+[  195.249220] ads7846_device:   y_plate_ohms = 0
+[  195.257075] ads7846_device:   debounce_max = 0
+[  195.264926] ads7846_device:   debounce_tol = 0
+[  195.272792] ads7846_device:   debounce_rep = 0
+[  195.281954] ads7846_device: SPI devices registered:
+[  195.292425] ads7846_device:    ads7846 spi0.0 2000kHz 8 bits mode=0x00
+[  195.303283] ads7846 spi0.0: unable to get regulator: -517
+[  195.313445] spi spi0.0: Driver ads7846 requests probe deferral
+[  195.324050] ads7846_device:
+root@Itead:~# 

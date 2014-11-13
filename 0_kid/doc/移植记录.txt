@@ -1,0 +1,40 @@
+﻿移植记录
+
+原则：不删除原有代码，采用宏定义来选择CONFIG_ARCH_
+
+在fbtft源代码基础上进行移植
+
+
+1. 修改 fbtft_framebuffer_alloc [已修改]
+
+    增加 info->fix.smem_start = (unsigned long)info->screen_base;
+
+
+     
+2. 替换gpio读写函数
+
+2.1 替换gpio_set_value为
+        static inline void itead_gpio_set_value(uint32_t gpio_no, value)
+        value 只能为0 LOW 或 1 HIGH
+        
+2.2 替换gpio_get_value为itead_gpio_get_value
+        static inline int32_t itead_gpio_get_value(uint32_t gpio_no)
+        返回值只能为0 LOW 或 1 HIGH
+        
+    
+3. fbtft_request_gpios     
+    有改动，须重写 itead_gpio_request_one
+    int32_t  itead_gpio_request_one(uint32_t gpio_no, uint32_t flags)
+        返回-1表示申请失败，
+        返回0表示成功
+        该函数内部要做参数检查
+        
+4. fbtft_free_gpios        
+    有改动，须重写 itead_gpio_free_one
+    void itead_gpio_free_one(uint32_t gpio_no)
+        该函数内部要做参数检查
+    
+
+5. 测试
+    fb_ili9325.ko
+    flexfb.ko

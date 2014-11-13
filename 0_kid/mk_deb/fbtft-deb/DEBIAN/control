@@ -1,0 +1,10 @@
+Package: fbtft-iteados-2.0.4
+Version: 0.1
+Architecture: armhf
+Maintainer: Wu Pengfei <pengfei.wu@itead.cc>
+Installed-Size: 3368
+Depends: bash
+Section: utils
+Priority: optional
+Homepage: http://github/iteadsw/SDK/
+Description: driver for TFT screen

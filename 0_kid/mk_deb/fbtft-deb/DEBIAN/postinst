@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# echo after install
+depmod -a
+
+echo 'fbtft_device name=itdb28 gpios=reset:89,dc:68,wr:67,cs:109,db00:9,db01:10,db02:11,db03:12,db04:13,db05:14,db06:15,db07:16 rotate=90 fps=50' >> /etc/modules
+
+modprobe fbtft_device name=itdb28 gpios=reset:89,dc:68,wr:67,cs:109,db00:9,db01:10,db02:11,db03:12,db04:13,db05:14,db06:15,db07:16 rotate=90 fps=50
+
+
